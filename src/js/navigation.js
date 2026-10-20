@@ -13,7 +13,16 @@ const CLASSES = {
 };
 
 /**
- * Initialize navigation functionality
+ * Sets up the mobile navigation menu. The toggle button opens and closes the
+ * menu and keeps `aria-expanded` in sync for assistive tech. The menu also
+ * closes on an outside click or the Escape key (returning focus to the toggle),
+ * matching expected disclosure-widget behavior. Returns silently on pages
+ * without the nav elements. Also runs automatically once the DOM is ready.
+ *
+ * @returns {void}
+ * @example
+ * import { initNavigation } from './navigation.js';
+ * initNavigation();
  */
 export function initNavigation() {
   const toggle = document.querySelector(NAV_SELECTORS.toggle);

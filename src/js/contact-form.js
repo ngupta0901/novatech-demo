@@ -22,10 +22,16 @@ const MESSAGES = {
 };
 
 /**
- * Show form status message
+ * Displays a success or error message in the form's status region so users
+ * (and screen readers, if the element is a live region) learn the outcome.
+ * Replaces any previous status styling.
+ *
  * @param {HTMLElement} statusEl - Status element
  * @param {string} message - Message to display
- * @param {boolean} isSuccess - Whether this is a success message
+ * @param {boolean} isSuccess - True for success styling, false for error styling
+ * @throws {TypeError} If `statusEl` is null or undefined
+ * @example
+ * showStatus(statusEl, 'Message sent!', true)
  */
 function showStatus(statusEl, message, isSuccess) {
   statusEl.textContent = message;
@@ -34,8 +40,13 @@ function showStatus(statusEl, message, isSuccess) {
 }
 
 /**
- * Clear form status message
+ * Empties the status region and removes its styling, so stale results from a
+ * previous attempt don't linger while a new submission is validated.
+ *
  * @param {HTMLElement} statusEl - Status element
+ * @throws {TypeError} If `statusEl` is null or undefined
+ * @example
+ * clearStatus(document.querySelector('#form-status'))
  */
 function clearStatus(statusEl) {
   statusEl.textContent = '';
@@ -43,8 +54,15 @@ function clearStatus(statusEl) {
 }
 
 /**
- * Handle form submission
- * @param {Event} event - Submit event
+ * Handles contact form submission: validates all fields, moves focus to the
+ * first invalid one (so keyboard and screen reader users land on the problem),
+ * and otherwise submits. Submission is currently simulated with a 1.5s delay;
+ * replace the timeout with a real request when an API exists. The submit button
+ * is disabled while sending to prevent duplicate submissions.
+ *
+ * @param {SubmitEvent} event - Submit event from the contact form
+ * @returns {Promise<void>} Resolves once validation fails or submission finishes
+ * @throws {TypeError} If the `#form-status` element is missing from the page
  */
 async function handleSubmit(event) {
   event.preventDefault();
@@ -87,8 +105,10 @@ async function handleSubmit(event) {
 }
 
 /**
- * Handle field blur for validation
- * @param {Event} event - Blur event
+ * Validates a field when the user leaves it, giving feedback early without
+ * flagging optional fields the user hasn't touched.
+ *
+ * @param {FocusEvent} event - Blur event from an input or textarea
  */
 function handleFieldBlur(event) {
   const field = event.target;
@@ -99,7 +119,14 @@ function handleFieldBlur(event) {
 }
 
 /**
- * Initialize contact form
+ * Wires up submit and blur validation on the contact form. Safe to call on
+ * pages without the form (it returns silently), which lets the module be
+ * loaded site-wide. Also runs automatically once the DOM is ready.
+ *
+ * @returns {void}
+ * @example
+ * import { initContactForm } from './contact-form.js';
+ * initContactForm();
  */
 export function initContactForm() {
   const form = document.querySelector(SELECTORS.form);

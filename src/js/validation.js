@@ -21,9 +21,16 @@ const MESSAGES = {
 };
 
 /**
- * Get validation rules for a field
- * @param {HTMLElement} field - Form field
- * @returns {Object} Validation rules
+ * Reads the constraints declared on a field's HTML attributes so validation
+ * stays driven by the markup instead of duplicated rules in JavaScript.
+ * Unset length constraints (the DOM reports -1) are normalized to null.
+ *
+ * @param {HTMLInputElement|HTMLTextAreaElement} field - Form field to inspect
+ * @returns {{required: boolean, type: string, minLength: number|null, maxLength: number|null, pattern: string|null}}
+ *   The constraints declared on the field
+ * @example
+ * // <input type="email" required minlength="5">
+ * getValidationRules(input) // { required: true, type: 'email', minLength: 5, maxLength: null, pattern: null }
  */
 function getValidationRules(field) {
   return {
@@ -36,9 +43,20 @@ function getValidationRules(field) {
 }
 
 /**
- * Validate a single field
- * @param {HTMLElement} field - Form field to validate
- * @returns {Object} Validation result { isValid, message }
+ * Validates one field and updates the UI to match, so users get immediate,
+ * accessible feedback. Only the first failing rule is reported, in this order:
+ * required, email format, phone format, min length, max length. Empty optional
+ * fields are always valid.
+ *
+ * Side effects: toggles the `is-invalid` class on the field and writes the
+ * message into the element with id `<field.id>-error` (if present).
+ *
+ * @param {HTMLInputElement|HTMLTextAreaElement} field - Field to validate
+ * @returns {{isValid: boolean, message: string}} Result; `message` is empty when valid
+ * @throws {TypeError} If `field` is null or undefined
+ * @example
+ * validateField(document.getElementById('email'))
+ * // { isValid: false, message: 'Please enter a valid email address' }
  */
 export function validateField(field) {
   const rules = getValidationRules(field);
@@ -95,9 +113,17 @@ export function validateField(field) {
 }
 
 /**
- * Validate entire form
+ * Validates every required or non-empty field in a form in one pass, so a
+ * submit handler can block submission and surface all errors at once.
+ * Each field's error UI is updated via {@link validateField}.
+ *
  * @param {HTMLFormElement} form - Form to validate
- * @returns {Object} Validation result { isValid, errors }
+ * @returns {{isValid: boolean, errors: Array<{field: string, message: string}>}}
+ *   `errors` lists each failing field by name (or id) with its message
+ * @throws {TypeError} If `form` is null or undefined
+ * @example
+ * const { isValid, errors } = validateForm(document.querySelector('#contact-form'))
+ * // isValid === false, errors === [{ field: 'email', message: 'This field is required' }]
  */
 export function validateForm(form) {
   const fields = form.querySelectorAll('input, textarea, select');
@@ -122,18 +148,29 @@ export function validateForm(form) {
 }
 
 /**
- * Check if email is valid
- * @param {string} email - Email to validate
- * @returns {boolean}
+ * Checks email format without touching the DOM, for use outside form fields.
+ * Intentionally lenient (something@domain.tld); it does not verify the address exists.
+ *
+ * @param {string} email - Email address to check
+ * @returns {boolean} True if the address matches the expected format
+ * @example
+ * isValidEmail('jane@novatech.com') // true
+ * isValidEmail('jane@novatech')     // false
  */
 export function isValidEmail(email) {
   return PATTERNS.email.test(email);
 }
 
 /**
- * Check if phone is valid
- * @param {string} phone - Phone to validate
- * @returns {boolean}
+ * Checks phone format without touching the DOM. Accepts digits, spaces,
+ * dashes, plus signs and parentheses so common regional formats pass; requires
+ * at least 10 such characters.
+ *
+ * @param {string} phone - Phone number to check
+ * @returns {boolean} True if the number matches the expected format
+ * @example
+ * isValidPhone('+1 (555) 123-4567') // true
+ * isValidPhone('12345')             // false
  */
 export function isValidPhone(phone) {
   return PATTERNS.phone.test(phone);
